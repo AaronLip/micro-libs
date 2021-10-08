@@ -54,8 +54,8 @@ volatile void Timer_Init (
     // Configure overflow interrupts on OC0
     TIE = enableInt ? (TIE | 0b00000001) : (TIE & (~0b00000001));
 
-    // Set OC0's compare register to configure its period
-    TC0 = (word)((double)initialOffset * 1e3 / (1.0 / busClock));
+    // Set OC0's compare register to configure its period in milliseconds
+    TC0 = 0xffff - busClock / (2 ^ prescale * initialOffset);
 
     // Enable the timer
     TSCR1 |= 0b10000000;

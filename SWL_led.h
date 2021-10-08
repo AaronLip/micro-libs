@@ -1,55 +1,81 @@
+/**
+ * Library: Switches & LEDs
+ * Author: Aaron Lip
+ * Date: October 7th 2021
+ * Details:
+ *      Provides a simple and CMPE1250 conformant API to the user interfaces
+ *      of CMPE1250's microcontroller dev board. Supports 3 LEDs and 5 switches
+ * 
+ * Revisions:
+ *      - Tracked by local git repo
+ */
+
 #include <hidef.h>
 #include "derivative.h"
 
 typedef enum LEDColour {
-  SWL_RED     = 0b10000000,
-  SWL_YELLOW  = 0b01000000,
-  SWL_GREEN   = 0b00100000
+    SWL_RED     = 0b10000000,
+    SWL_YELLOW  = 0b01000000,
+    SWL_GREEN   = 0b00100000
 } SWL_LEDColour;
 
 typedef enum SwitchPos {
-  SWL_CTR   = 0b00000001,
-  SWL_RIGHT = 0b00000010,
-  SWL_DOWN  = 0b00000100,
-  SWL_LEFT  = 0b00001000,
-  SWL_UP    = 0b00010000 
+    SWL_CTR   = 0b00000001,
+    SWL_RIGHT = 0b00000010,
+    SWL_DOWN  = 0b00000100,
+    SWL_LEFT  = 0b00001000,
+    SWL_UP    = 0b00010000 
 } SWL_SwitchPos;
 
-volatile void SWL_Init() {
+void SWL_Init(void);
+void SWL_ON(SWL_LEDColour led);
+void SWL_OFF(SWL_LEDColour led);
+void SWL_TOG(SWL_LEDColour led);
+int SWL_Pushed(SWL_SwitchPos button);
+int SWL_Any(void);
 
-    PT1AD1 &= 0b00011111;     // Configure the buffer's default values
-    DDR1AD1 = 0b11100000;     // Configure I/O directions
-    ATD1DIEN1 |= 0b00011111;  // Enable the buffer for switches
+// Calling this function puts the adc into a known state the library expects
+void SWL_Init(void) {
+
+    PT1AD1 &= 0b00011111;     // Set LEDS off on init
+    DDR1AD1 = 0b11100000;     // Configure leds as outputs and switches as inputs
+    ATD1DIEN1 |= 0b00011111;  // Use switches as digital inputs (HIGH or LOW only)
 
     return;
 };
 
-volatile void SWL_ON(SWL_LEDColour led) {
+// Turns on an LED
+void SWL_ON(SWL_LEDColour led) {
 
     PT1AD1 |= led;
 
     return;
 }
 
-volatile void SWL_OFF(SWL_LEDColour led) {
+// Turns off an LED
+void SWL_OFF(SWL_LEDColour led) {
 
     PT1AD1 &= (~led);
 
     return;
 }
 
-volatile void SWL_TOG(SWL_LEDColour led) {
+// Toggles an LED
+void SWL_TOG(SWL_LEDColour led) {
 
     PT1AD1 ^= led;
 
     return;
 }
 
+// Checks if a button is being pressed
 int SWL_Pushed(SWL_SwitchPos button) {
 
     return PT1AD1 & button;
 }
 
+// Checks if any button is being pressed
+// returns a truthy integer that can be used to determine which buttons are on
 int SWL_Any() {
 
     return PT1AD1 & 0b00011111;
