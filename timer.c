@@ -40,7 +40,7 @@ void Timer_Init (
     TIE = enableInt ? (TIE | TIE_C0I_MASK) : (TIE & (~TIE_C0I_MASK));
 
     // Set OC0's compare register to configure the timer's period
-    TC0 = TCNT + (word) Timer_Cycles(initialOffset);
+    TC0 = TCNT + (word) (long)Timer_Cycles(initialOffset);
 
     // Initialize channel 0 timer flag by clearing
     TFLG1 = TFLG1_C0F_MASK;  // Be cautious not to write 1s to other channels
@@ -63,8 +63,12 @@ int Timer_Sleep(dword milliseconds) {
 
     // Convert a potentially very large delay using modulo arithmetic
     cycles = Timer_Cycles(milliseconds);
-    fullDelays = (dword) floor(cycles / (pow(2, 8) - 1));
-    remainderDelay = (word) fmod(cycles, pow(2, 8) - 1);
+    fullDelays = (dword) (long long) (cycles / 0xffff);
+    remainderDelay = (word) (long) fmod(cycles, 0xffff);
+
+    if (fullDelays == 0 && remainderDelay == 0 || cycles == 0 || cycles > 0xffffffff) {
+        return -1;
+    }
 
     // Consume the delays that max out TC0
     if (fullDelays > 0) {
@@ -74,7 +78,7 @@ int Timer_Sleep(dword milliseconds) {
             TFLG1 = TFLG1_C0F_MASK;
 
             // Rearm the timer for its full duration (relative to TC0 when rearming, not TCNT)
-            TC0 += (word) (pow(2, 8) - 1);
+            TC0 += (word) -1;
 
             // Block until the timer flag is raised when the delay elapses
             for (;;) {
@@ -83,7 +87,6 @@ int Timer_Sleep(dword milliseconds) {
                 }
             }
         }
-
     }
 
     // Consume the remaining duration (if any)
@@ -113,5 +116,5 @@ int Timer_Sleep(dword milliseconds) {
 double Timer_Cycles(dword delayMilliseconds) {
     word prescale = TSCR2 & TSCR2_PR_MASK;
 
-    return (double) busRate / pow(2, prescale) / pow(10, 3) / (double) delayMilliseconds;
+    return ((double) delayMilliseconds / (double) 1000) / ((double) (2 << (word) prescale) / (double) busRate);
 }
