@@ -14,7 +14,6 @@
 #include "derivative.h"
 #include "SWL_led.h"
 
-// Calling this function puts the adc into a known state the library expects
 void SWL_Init() {
 
     PT1AD1 &= 0b00011111;     // Set LEDS off on init
