@@ -66,23 +66,31 @@ int Timer_Sleep(dword milliseconds) {
     fullDelays = (dword) (long long) (cycles / 0xffff);
     remainderDelay = (word) (long) fmod(cycles, 0xffff);
 
+    // Ensure that the values returned by Timer_Cycles make sense
     if (fullDelays == 0 && remainderDelay == 0 || cycles == 0 || cycles > 0xffffffff) {
         return -1;
     }
+
+    // Use OC6 to debug this function
+    TIOS_IOS6 = 1;
+
+    // Configure OC6 (pin 17) to toggle when the timer triggers
+    TCTL1 &= (~0b00110000);
+    TCTL1 |= (Timer_Pin_Toggle << 4);
 
     // Consume the delays that max out TC0
     if (fullDelays > 0) {
         for (; fullDelays-- > 0 ;) {
 
             // Clear the timer flag
-            TFLG1 = TFLG1_C0F_MASK;
+            TFLG1 = TFLG1_C6F_MASK;
 
             // Rearm the timer for its full duration (relative to TC0 when rearming, not TCNT)
-            TC0 += (word) -1;
+            TC6 += (word) -1;
 
             // Block until the timer flag is raised when the delay elapses
             for (;;) {
-                if (TFLG1_C0F) {
+                if (TFLG1_C6F) {
                     break;
                 }
             }
@@ -93,28 +101,29 @@ int Timer_Sleep(dword milliseconds) {
     if (remainderDelay > 0) {
 
         // Clear the timer flag
-        TFLG1 = TFLG1_C0F_MASK;
+        TFLG1 = TFLG1_C6F_MASK;
 
         // Rearm the timer for the small remaining duration
-        TC0 += remainderDelay;
+        TC6 += remainderDelay;
 
         // Block until the delay elapses
         for (;;) {
-            if (TFLG1_C0F) {
+            if (TFLG1_C6F) {
                 break;
             }
         }
     }
 
     // Clear the timer flag
-    TFLG1 = TFLG1_C0F_MASK;
+    TFLG1 = TFLG1_C6F_MASK;
 
     // Return success
     return 0;
 }
 
+// 2 * Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period, Tc = period of the clock,
 double Timer_Cycles(dword delayMilliseconds) {
     word prescale = TSCR2 & TSCR2_PR_MASK;
 
-    return ((double) delayMilliseconds / (double) 1000) / ((double) (2 << (word) prescale) / (double) busRate);
+    return 2.0 * ((double) delayMilliseconds / (double) 1000) / ((double) (2 << (word) prescale) / (double) busRate);
 }
