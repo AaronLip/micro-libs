@@ -78,7 +78,7 @@ void Segs_16H(word Value, Segs_LineOption Line) {
 
         Segs_Normal(
             // Trim and adjust the address for the current line
-            (3 + 4 * Line - addr) & 0x07 | 0b01011000,
+            (3 - addr + 4 * Line) & 0x07 | 0b01011000,
             // Trim the desired nibble
             Value / (0x1 << addr * 4) % 0x10,
             // output without a decimal point
@@ -86,19 +86,51 @@ void Segs_16H(word Value, Segs_LineOption Line) {
     }
 }
 
+// show a 16-bit value on the upper or lower display with specified decimal points
+void Segs_16HP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]) {
+    byte addr = 0;
+
+    for (;addr < 4;addr++) {
+
+        Segs_Normal(
+            // Trim and adjust the address for the current line
+            (3 - addr + 4 * Line) & 0x07 | 0b01011000,
+            // Trim the desired nibble
+            Value / (0x1 << addr * 4) % 0x10,
+            // output decimal setting
+            Decimals[3-addr]);
+    }
+}
+
 // show a decimal value on the first or second line of the 7-segs
 void Segs_16D(word Value, Segs_LineOption Line) {
     byte addr = 0;
-    word decimal_powers[4] = {1, 10, 100, 1000};
+    byte magnitude = 1;
 
-    for (;addr < 4;addr++) {
+    for (; addr < 4; addr++, magnitude *= 10) {
+        Segs_Normal(
+            // Trim and adjust the address for the current line
+            (3 - addr + 4 * Line) & 0x07 | 0b01011000,
+            // Trim the desired nibble
+            Value / magnitude,
+            // output without a decimal point
+            Segs_DP_OFF);
+    }
+}
+
+// show a 16-bit value on the upper or lower display with specified decimal points
+void Segs_16DP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]) {
+    byte addr = 0;
+    byte magnitude = 1;
+
+    for (; addr < 4; addr++, magnitude *= 10) {
         Segs_Normal(
             // Trim and adjust the address for the current line
             (3 + 4 * Line - addr) & 0x07 | 0b01011000,
             // Trim the desired nibble
-            Value / decimal_powers[addr] % 10,
-            // output without a decimal point
-            Segs_DP_OFF);
+            Value / magnitude,
+            // output decimal setting
+            Decimals[3-addr]);
     }
 }
 

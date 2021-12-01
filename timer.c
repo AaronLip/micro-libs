@@ -29,21 +29,24 @@ void Timer_Init (
     TSCR2_PR = 0;
     TSCR2 |= prescale & TSCR2_PR_MASK;
 
-    // Use OC0 as output compare
-    TIOS_IOS0 = 1;
+    // preconfigure channel 0 for manual use
+    if (initialOffset != 0) {
+        // Use OC0 as output compare
+        TIOS_IOS0 = 1;
 
-    // Configure how pin 9 behaves on OC0 compare success
-    TCTL2 &= (~0b00000011);
-    TCTL2 |= (pinAction & 0b00000011);
+        // Configure how pin 9 behaves on OC0 compare success
+        TCTL2 &= (~0b00000011);
+        TCTL2 |= (pinAction & 0b00000011);
 
-    // Configure overflow interrupts on OC0
-    TIE = enableInt ? (TIE | TIE_C0I_MASK) : (TIE & (~TIE_C0I_MASK));
+        // Configure overflow interrupts on OC0
+        TIE = enableInt ? (TIE | TIE_C0I_MASK) : (TIE & (~TIE_C0I_MASK));
 
-    // Set OC0's compare register to configure the timer's period
-    TC0 = TCNT + (word) (long)Timer_Cycles(initialOffset);
+        // Set OC0's compare register to configure the timer's period
+        TC0 = TCNT + initialOffset;
 
-    // Initialize channel 0 timer flag by clearing
-    TFLG1 = TFLG1_C0F_MASK;  // Be cautious not to write 1s to other channels
+        // Initialize channel 0 timer flag by clearing
+        TFLG1 = TFLG1_C0F_MASK;  // Be cautious not to write 1s to other channels
+    }
 
     // Enable the timer when config is done
     TSCR1_TEN = 1;
@@ -67,7 +70,7 @@ int Timer_Sleep(dword milliseconds) {
     remainderDelay = (word) (long) fmod(cycles, 0xffff);
 
     // Ensure that the values returned by Timer_Cycles make sense
-    if (fullDelays == 0 && remainderDelay == 0 || cycles == 0 || cycles > 0xffffffff) {
+    if (cycles == 0 || cycles / 0xffff > 0xffffffff) {
         return -1;
     }
 
@@ -78,15 +81,15 @@ int Timer_Sleep(dword milliseconds) {
     TCTL1 &= (~0b00110000);
     TCTL1 |= (Timer_Pin_Toggle << 4);
 
-    // Consume the delays that max out TC0
+    // Consume the delays that max out TC6
     if (fullDelays > 0) {
         for (; fullDelays-- > 0 ;) {
 
             // Clear the timer flag
             TFLG1 = TFLG1_C6F_MASK;
 
-            // Rearm the timer for its full duration (relative to TC0 when rearming, not TCNT)
-            TC6 += (word) -1;
+            // Rearm the timer for its full duration (relative to TCx when rearming, not TCNT)
+            TC6 += (word) 0xffff;
 
             // Block until the timer flag is raised when the delay elapses
             for (;;) {

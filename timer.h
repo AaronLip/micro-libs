@@ -21,8 +21,8 @@ typedef enum Timer_PinAction
     Timer_Pin_Set = 3
 } Timer_PinAction;
 
-extern void Timer_Init(dword busClock, Timer_Prescale prescale, word initialOffset, word enableInt, Timer_PinAction pinAction);
-extern int Timer_Sleep(dword milliseconds);
-extern double Timer_Cycles(dword delayMilliseconds);
+void Timer_Init(dword busClock, Timer_Prescale prescale, word initialOffset, word enableInt, Timer_PinAction pinAction);
+int Timer_Sleep(dword milliseconds);
+double Timer_Cycles(dword delayMilliseconds);
 
 #endif

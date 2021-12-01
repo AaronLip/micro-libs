@@ -29,8 +29,14 @@ void Segs_CodeB(byte Addr, byte Value);
 // show a 16-bit value on the upper or lower display
 void Segs_16H(word Value, Segs_LineOption Line);
 
+// show a 16-bit value on the upper or lower display with specified decimal points
+void Segs_16HP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]);
+
 // show a decimal value on the first or second line of the 7-segs
 void Segs_16D(word Value, Segs_LineOption Line);
+
+// show a 16-bit value on the upper or lower display with specified decimal points
+void Segs_16DP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]);
 
 // show the 8-bit value starting on the digit as addr (0-6)
 void Segs_8H(byte Addr, byte Value);
