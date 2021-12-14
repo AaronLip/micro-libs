@@ -112,7 +112,7 @@ void Segs_16D(word Value, Segs_LineOption Line) {
             // Trim and adjust the address for the current line
             (3 - addr + 4 * Line) & 0x07 | 0b01011000,
             // Trim the desired nibble
-            Value / magnitude,
+            Value / magnitude % 10,
             // output without a decimal point
             Segs_DP_OFF);
     }

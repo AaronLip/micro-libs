@@ -45,7 +45,7 @@ void Timer_Init (
         TC0 = TCNT + initialOffset;
 
         // Initialize channel 0 timer flag by clearing
-        TFLG1 = TFLG1_C0F_MASK;  // Be cautious not to write 1s to other channels
+        TFLG1 |= TFLG1_C0F_MASK;  // Be cautious not to write 1s to other channels
     }
 
     // Enable the timer when config is done
@@ -86,7 +86,7 @@ int Timer_Sleep(dword milliseconds) {
         for (; fullDelays-- > 0 ;) {
 
             // Clear the timer flag
-            TFLG1 = TFLG1_C6F_MASK;
+            TFLG1 |= TFLG1_C6F_MASK;
 
             // Rearm the timer for its full duration (relative to TCx when rearming, not TCNT)
             TC6 += (word) 0xffff;
@@ -104,7 +104,7 @@ int Timer_Sleep(dword milliseconds) {
     if (remainderDelay > 0) {
 
         // Clear the timer flag
-        TFLG1 = TFLG1_C6F_MASK;
+        TFLG1 |= TFLG1_C6F_MASK;
 
         // Rearm the timer for the small remaining duration
         TC6 += remainderDelay;
@@ -118,7 +118,7 @@ int Timer_Sleep(dword milliseconds) {
     }
 
     // Clear the timer flag
-    TFLG1 = TFLG1_C6F_MASK;
+    TFLG1 |= TFLG1_C6F_MASK;
 
     // Return success
     return 0;

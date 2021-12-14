@@ -63,6 +63,7 @@ void lcd_Init() {
     lcd_Clear();
     lcd_Inst(0x06);  // Move cursor on write, don't shift
     lcd_DisplayControl(1, 1, 1);  // Display on, cursor on, blink cursor
+    lcd_Addr(0);
 }
 
 // Writes an instruction to the LCD bus
@@ -157,7 +158,7 @@ void lcd_Addr(byte addr) {
 void lcd_AddrXY(byte ix, byte iy) {
     byte addr = (3 - iy % 4) % 2 ? 0x00 : 0x40;
     addr += (3 - iy % 4) > 1 ? 0x00 : 0x14;
-    addr += ix < 0x13 ? ix : 0x13;
+    addr += ix % 0x14;
 
     lcd_Addr(addr);
 }
@@ -166,10 +167,8 @@ void lcd_AddrXY(byte ix, byte iy) {
  * The first 0x0f values are reserved for CGRAM characters
  */
 void lcd_String(char const *straddr) {
-    char c;
-
-    for (c = *straddr; c != '\0'; c = *++straddr) {
-        lcd_Data(c);
+    for (; *straddr; straddr++) {
+        lcd_Data(*straddr);
     }
 }
 
@@ -179,7 +178,7 @@ void lcd_StringXY(byte ix, byte iy, char const *const straddr) {
 }
 
 void lcd_DisplayControl(byte displayOn, byte cursorOn, byte blinkOn) {
-    lcd_Inst(0x08 | (displayOn ? 1 : 0) << 2 | (cursorOn ? 1 : 0) << 1 | (blinkOn ? 1 : 0));
+    lcd_Inst(0x08 | (displayOn ? 0b100 : 0) | (cursorOn ? 0b10 : 0) | (blinkOn ? 1 : 0));
 }
 
 void lcd_Clear() {
@@ -191,11 +190,11 @@ void lcd_Home() {
 }
 
 void lcd_ShiftL() {
-    lcd_Inst(0x10);
+    lcd_Inst(0x18);
 }
 
 void lcd_ShiftR() {
-    lcd_Inst(0x14);
+    lcd_Inst(0x1C);
 }
 
 void lcd_CGAddr(byte addr) {
@@ -213,4 +212,5 @@ void lcd_CGAddr(byte addr) {
 void lcd_CGChar(byte cgAddr, char const *const cgData) {
     lcd_CGAddr(cgAddr);
     lcd_String(cgData);
+    lcd_Addr(0x00);
 }

@@ -41,6 +41,6 @@ void lcd_ShiftL(void);
 void lcd_ShiftR(void);
 
 void lcd_CGAddr(byte addr);
-void lcd_CGChar(byte cgAddr, byte const * const cgData);
+void lcd_CGChar(byte cgAddr, char const * const cgData);
 
 #endif
