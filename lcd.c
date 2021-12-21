@@ -4,13 +4,6 @@
 #include "lcd.h"
 #include "timer.h"
 
-// Used for tighter LCD timing; at 20MHz, each cycle = 50ns
-volatile byte lcd_Cycles;
-#define bus_delay_ns 50
-
-// Transfers require minimum pulse width (PW_EH) of 450ns
-#define lcd_Delay(ns) for (lcd_Cycles = 0; lcd_Cycles < 1 + ns / bus_delay_ns; lcd_Cycles++);
-
 // Toggle bus direction
 #define lcd_ReadMode DDRH = 0; PORTK |= 2;
 #define lcd_WriteMode PORTK &= (~2); DDRH = 0xFF;
@@ -44,17 +37,17 @@ void lcd_Init() {
 
     // Long knock
     lcd_StartTransfer;
-    (void) Timer_Sleep(5);
+    (void) Timer_Sleep(4.1);
     lcd_StopTransfer;
 
     // Short knock
     lcd_StartTransfer;
-    lcd_Delay(1);
+    (void) Timer_Sleep(0.0001);
     lcd_StopTransfer;
 
     // Final knock -- bit banging is done, lcd_Await() will now work
     lcd_StartTransfer;
-    lcd_Delay(450);
+    (void) Timer_Sleep(0.450);
     lcd_StopTransfer;
 
     // Initial configuration
@@ -77,18 +70,18 @@ void lcd_Inst(byte instruction) {
     PTH = instruction;
 
     // Set up time (tAS) after RS/RW changes is 140ns minimum
-    lcd_Delay(140);
+    (void) Timer_Sleep(0.140);
 
     lcd_StartTransfer;
-    lcd_Delay(450);
+    (void) Timer_Sleep(0.450);
     lcd_StopTransfer;
 
     // the data bus and controls must be unchanged for 10ns after a transfer ends
-    lcd_Delay(10);
+    (void) Timer_Sleep(0.010);
     PTH ^= PTH;
 
     // Then wait out a minimum pulse width after clearing the bus
-    lcd_Delay(450);
+    (void) Timer_Sleep(0.450);
 }
 
 /* Waits for the LCD MCU to finish its tasks
@@ -103,12 +96,12 @@ void lcd_Await() {
     do {
         // Signal a transfer and hold it on for PW_ED
         lcd_StartTransfer;
-        lcd_Delay(320);
+        (void) Timer_Sleep(0.320);
 
         // Read the response, then wait out the hold period of 20ns (tH)
         isBusy = PTH & 0b10000000;
         lcd_StopTransfer;
-        lcd_Delay(20);
+        (void) Timer_Sleep(0.020);
     } while (isBusy);
 }
 
@@ -125,18 +118,18 @@ void lcd_Data(byte data) {
     PTH = data;
 
     // Set up time (tAS) after RS/RW changes is 140ns minimum
-    lcd_Delay(140);
+    (void) Timer_Sleep(0.140);
 
     lcd_StartTransfer;
-    lcd_Delay(450);
+    (void) Timer_Sleep(0.450);
     lcd_StopTransfer;
 
     // the data bus and controls must be unchanged for 10ns after a transfer ends
-    lcd_Delay(10);
+    (void) Timer_Sleep(0.010);
     PTH ^= PTH;  // Clear Port H after use
 
     // Then wait out a minimum pulse width after clearing the bus
-    lcd_Delay(450);
+    (void) Timer_Sleep(0.450);
 }
 
 /* Configures the bus to write to DDRAM, the text displayed on the LCD
@@ -207,7 +200,7 @@ void lcd_CGAddr(byte addr) {
  * 1 corresponds to on, 0 to off
  * The rows count from top of the character to the bottom
  * A new character begins every 8 or 10 rows depending on the font selected
- * Upon using this command, lcd_Data manipulates the CGRAM address
+ * Upon using this command, lcd_Addr manipulates the CGRAM address
  */
 void lcd_CGChar(byte cgAddr, char const *const cgData) {
     lcd_CGAddr(cgAddr);

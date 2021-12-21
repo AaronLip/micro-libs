@@ -54,13 +54,13 @@ void Timer_Init (
     return;
 }
 
-int Timer_Sleep(dword milliseconds) {
+int Timer_Sleep(double milliseconds) {
     double cycles;
     dword fullDelays;
     word remainderDelay;
 
     // Return error value to indicate invalid configurations
-    if (TSCR1_TEN == 0 || milliseconds == 0) {
+    if (TSCR1_TEN == 0 || milliseconds <= 0) {
         return -1;
     }
 
@@ -124,9 +124,15 @@ int Timer_Sleep(dword milliseconds) {
     return 0;
 }
 
-// 2 * Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period, Tc = period of the clock,
-double Timer_Cycles(dword delayMilliseconds) {
-    word prescale = TSCR2 & TSCR2_PR_MASK;
+#define PRESCALE (word) (2 << TSCR2 & TSCR2_PR_MASK)
 
-    return 2.0 * ((double) delayMilliseconds / (double) 1000) / ((double) (2 << (word) prescale) / (double) busRate);
+// 2 * Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period, Tc = period of the clock,
+double Timer_Cycles(double delayMilliseconds) {
+    return 2.0 * (delayMilliseconds / 1E3) * busRate / PRESCALE;
 }
+
+double Timer_FreqCycles(double targetFrequency) {
+    return (double) busRate / (PRESCALE * targetFrequency);
+}
+
+#undef PRESCALE
