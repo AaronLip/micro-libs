@@ -124,15 +124,15 @@ int Timer_Sleep(double milliseconds) {
     return 0;
 }
 
-#define PRESCALE (word) (2 << TSCR2 & TSCR2_PR_MASK)
+#define PRESCALE (word) (1 << TSCR2 & TSCR2_PR_MASK)
 
-// 2 * Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period, Tc = period of the clock,
+// Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period and Tc = period of the clock
 double Timer_Cycles(double delayMilliseconds) {
-    return 2.0 * (delayMilliseconds / 1E3) * busRate / PRESCALE;
+    return (delayMilliseconds / 1E3) * busRate / PRESCALE;
 }
 
 double Timer_FreqCycles(double targetFrequency) {
-    return (double) busRate / (PRESCALE * targetFrequency);
+    return (double) (busRate / (PRESCALE * targetFrequency)) / 2;
 }
 
 #undef PRESCALE
