@@ -21,6 +21,18 @@ typedef enum Timer_PinAction
     Timer_Pin_Set = 3
 } Timer_PinAction;
 
+typedef enum Timer_Channel
+{
+    Timer_Channel0 = 0,
+    Timer_Channel1 = 1,
+    Timer_Channel2 = 2,
+    Timer_Channel3 = 3,
+    Timer_Channel4 = 4,
+    Timer_Channel5 = 5,
+    Timer_Channel6 = 6,
+    Timer_Channel7 = 7
+} Timer_Channel;
+
 void Timer_Init(dword busClock, Timer_Prescale prescale, word initialOffset, word enableInt, Timer_PinAction pinAction);
 int Timer_Sleep(double milliseconds);
 double Timer_Cycles(double delayMilliseconds);
