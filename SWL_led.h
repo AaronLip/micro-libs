@@ -33,6 +33,9 @@ void SWL_OFF(SWL_LEDColour led);
 // Toggle between on and off for the specified LED
 void SWL_TOG(SWL_LEDColour led);
 
+// Use a conditional to turn on the specified LED
+void SWL_IF(int condition, SWL_LEDColour led);
+
 // Return a truthy int (the button's mask) if the indicated button is pressed, 0 otherwise
 int SWL_Pushed(SWL_SwitchPos button);
 

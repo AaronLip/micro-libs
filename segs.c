@@ -51,12 +51,14 @@ void Segs_Normal(byte Addr, byte Value, Segs_DPOption dp) {
 
     for (;t<8;t++);
 
-    // Clip the value into range and pack the decimal value with it
-    Value &= 0xf;
-    if (dp == Segs_DP_ON)
-        Value &= (~0x80);
-    else
-        Value |= 0x80;
+    if (Value != 0x80) {
+        // Clip the value into range and pack the decimal value with it
+        Value &= 0xf;
+        if (dp == Segs_DP_ON)
+            Value &= (~0x80);
+        else
+            Value |= 0x80;
+    }
     
     // Write the value
     PORTB = Value;
@@ -68,7 +70,23 @@ void Segs_Normal(byte Addr, byte Value, Segs_DPOption dp) {
 
 // deprecated after term 1202
 // go code B (changes all of display to code b)
-void Segs_CodeB(byte Addr, byte Value);
+void Segs_CodeB(byte Addr, byte Value) {
+    byte t = 0;
+
+    PORTB = Addr & 0x07 | 0b00011000;
+    Segs_CONTROL_MODE;
+    Segs_WRITE;
+
+    for (;t<8;t++);
+
+    Value &= 0xf;
+    
+    PORTB = Value;
+    Segs_DATA_MODE;
+    Segs_WRITE;
+
+    for (t=0;t<8;t++);
+}
 
 // show a 16-bit value on the upper or lower display
 void Segs_16H(word Value, Segs_LineOption Line) {

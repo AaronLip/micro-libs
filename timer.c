@@ -54,6 +54,20 @@ void Timer_Init (
     return;
 }
 
+unsigned int Timer_Rearm(Timer_Channel channel, word cycleOffset) {
+
+    // Check the timer flag
+    if (TFLG1 & (1 << channel)) {
+
+        // Clear and Rearm the flag
+        TFLG1 |= (1 << channel);
+        TFLG1 += cycleOffset;
+
+        // Notify the caller
+        return 1;
+    }   return 0;
+}
+
 int Timer_Sleep(double milliseconds) {
     double cycles;
     dword fullDelays;
@@ -68,11 +82,6 @@ int Timer_Sleep(double milliseconds) {
     cycles = Timer_Cycles(milliseconds);
     fullDelays = (dword) (long long) (cycles / 0xffff);
     remainderDelay = (word) (long) fmod(cycles, 0xffff);
-
-    // Ensure that the values returned by Timer_Cycles make sense
-    if (cycles == 0 || cycles / 0xffff > 0xffffffff) {
-        return -1;
-    }
 
     // Use OC6 to debug this function
     TIOS_IOS6 = 1;
@@ -101,7 +110,7 @@ int Timer_Sleep(double milliseconds) {
     }
 
     // Consume the remaining duration (if any)
-    if (remainderDelay > 0) {
+    if (remainderDelay > 0 | (fullDelays > 0 && remainderDelay == 0)) {
 
         // Clear the timer flag
         TFLG1 |= TFLG1_C6F_MASK;
@@ -119,6 +128,11 @@ int Timer_Sleep(double milliseconds) {
 
     // Clear the timer flag
     TFLG1 |= TFLG1_C6F_MASK;
+
+    // Ensure that the values returned by Timer_Cycles make sense
+    if (cycles < 0 || cycles / 0xffff > 0xffffffff) {
+        return -1;
+    }
 
     // Return success
     return 0;

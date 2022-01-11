@@ -48,6 +48,12 @@ void SWL_TOG(SWL_LEDColour led) {
     return;
 }
 
+// Turn on LED if condition is true
+void SWL_IF(int condition, SWL_LEDColour led) {
+    if (condition) SWL_ON(led);
+    else SWL_OFF(led);
+}
+
 // Checks if a button is being pressed
 int SWL_Pushed(SWL_SwitchPos button) {
 

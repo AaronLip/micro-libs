@@ -136,12 +136,12 @@ void lcd_Data(byte data) {
  *
  * Line 1 - 0x00 ... 0x13
  * Line 3 - 0x14 ... 0x27
- *  N/A*  - 0x28 ... 0x39
+ *  N/A+  - 0x28 ... 0x39
  * Line 2 - 0x40 ... 0x53
  * Line 4 - 0x54 ... 0x67
- *  N/A*  - 0x68 ... 0x7F
+ *  N/A+  - 0x68 ... 0x7F
  * 
- * * These addresses are undefined, undisplayed and may mirror other addresses
+ * + These addresses are undefined, undisplayed and may mirror other addresses
  *   use them at your own risk
  */
 void lcd_Addr(byte addr) {
