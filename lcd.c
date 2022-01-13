@@ -29,7 +29,7 @@ void lcd_Init() {
     DDRK |= 0x07; 
 
     // Wait for display MPU to boot itself
-    Timer_Init(20E6, Timer_Prescale_1, 0, 0, Timer_Pin_Disco);
+    Timer_Init(20E6, Timer_Prescale_1);
     (void) Timer_Sleep(15);
 
     // Begin 8-bit init handshake; show the 8-bit for 4.1ms, then 100us, then a final time

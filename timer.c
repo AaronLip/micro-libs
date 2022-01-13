@@ -6,12 +6,9 @@
 dword busRate;
 
 // Timer peripheral configuration
-void Timer_Init (
+void Timer_Init(
     dword busClock,            // kHz, allowing up to approx. 65.5MHz. (20MHz default)
-    Timer_Prescale prescale,   // Divides the bus clock signal for longer durations
-    word initialOffset,        // Offset from TCNT in milliseconds
-    word enableInt,            // Enables interrupts on OC0
-    Timer_PinAction pinAction  // Pin 9's behaviour when the timer triggers
+    Timer_Prescale prescale    // Divides the bus clock signal for longer durations
 ) {
     // Store busRate somewhere (though we can calculate this internally if we are not using an external oscillator)
     busRate = busClock;
@@ -29,32 +26,57 @@ void Timer_Init (
     TSCR2_PR = 0;
     TSCR2 |= prescale & TSCR2_PR_MASK;
 
-    // preconfigure channel 0 for manual use
-    if (initialOffset != 0) {
-        // Use OC0 as output compare
-        TIOS_IOS0 = 1;
-
-        // Configure how pin 9 behaves on OC0 compare success
-        TCTL2 &= (~0b00000011);
-        TCTL2 |= (pinAction & 0b00000011);
-
-        // Configure overflow interrupts on OC0
-        TIE = enableInt ? (TIE | TIE_C0I_MASK) : (TIE & (~TIE_C0I_MASK));
-
-        // Set OC0's compare register to configure the timer's period
-        TC0 = TCNT + initialOffset;
-
-        // Initialize channel 0 timer flag by clearing
-        TFLG1 |= TFLG1_C0F_MASK;  // Be cautious not to write 1s to other channels
-    }
-
     // Enable the timer when config is done
     TSCR1_TEN = 1;
 
     return;
 }
 
-unsigned int Timer_Rearm(Timer_Channel channel, word cycleOffset) {
+#define T_OFFSET(TC_REGISTER) TC_REGISTER = TCNT + initialOffset; break;
+void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinAction pinAction, word enableInt) {
+    // Use OCx as output compare
+    TIOS |= 1 << channel;
+
+    // Configure how the output pin behaves on OCx compare success
+    if (channel > 3) {
+        TCTL1 &= (~(0b11 << 2*(channel - 4)));
+        TCTL1 |= (pinAction & 0b11) << 2*(channel - 4);
+    } else {
+        TCTL2 &= (~(0b11 << 2*channel));
+        TCTL2 |= (pinAction & 0b11) << 2*channel;
+    }
+
+    // Configure overflow interrupts on OCx
+    TIE = enableInt ? (TIE | 1 << channel) : (TIE & (~(1 << channel)));
+
+    // Set OCx's compare register to configure the timer's period
+    switch (channel) {
+        case Timer_Channel0:
+            T_OFFSET(TC0);
+        case Timer_Channel1:
+            T_OFFSET(TC1);
+        case Timer_Channel2:
+            T_OFFSET(TC2);
+        case Timer_Channel3:
+            T_OFFSET(TC3);
+        case Timer_Channel4:
+            T_OFFSET(TC4);
+        case Timer_Channel5:
+            T_OFFSET(TC5);
+        case Timer_Channel6:
+            T_OFFSET(TC6);
+        case Timer_Channel7:
+            T_OFFSET(TC7);
+        default:
+            break;
+    }
+
+    // Initialize channel x timer flag by clearing
+    TFLG1 |= 1 << channel;  // Be cautious not to write 1s to other channels
+}
+#undef T_OFFSET
+
+int Timer_Rearm(Timer_Channel channel, word cycleOffset) {
 
     // Check the timer flag
     if (TFLG1 & (1 << channel)) {
