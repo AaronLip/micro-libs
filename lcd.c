@@ -42,12 +42,11 @@ void lcd_Init() {
 
     // Short knock
     lcd_StartTransfer;
-    (void) Timer_Sleep(0.0001);
     lcd_StopTransfer;
 
     // Final knock -- bit banging is done, lcd_Await() will now work
     lcd_StartTransfer;
-    (void) Timer_Sleep(0.450);
+    { int i = 0; for (i=0; i<9; ++i); };
     lcd_StopTransfer;
 
     // Initial configuration
@@ -61,6 +60,8 @@ void lcd_Init() {
 
 // Writes an instruction to the LCD bus
 void lcd_Inst(byte instruction) {
+    int i;
+
     // Wait for the MCU to finish tasks
     lcd_Await();
 
@@ -70,18 +71,17 @@ void lcd_Inst(byte instruction) {
     PTH = instruction;
 
     // Set up time (tAS) after RS/RW changes is 140ns minimum
-    (void) Timer_Sleep(0.140);
+    for (i=0; i<3; ++i);
 
     lcd_StartTransfer;
-    (void) Timer_Sleep(0.450);
+    for (i=0; i<9; ++i);
     lcd_StopTransfer;
 
     // the data bus and controls must be unchanged for 10ns after a transfer ends
-    (void) Timer_Sleep(0.010);
     PTH ^= PTH;
 
     // Then wait out a minimum pulse width after clearing the bus
-    (void) Timer_Sleep(0.450);
+    for (i=0; i<9; ++i);
 }
 
 /* Waits for the LCD MCU to finish its tasks
@@ -96,12 +96,11 @@ void lcd_Await() {
     do {
         // Signal a transfer and hold it on for PW_ED
         lcd_StartTransfer;
-        (void) Timer_Sleep(0.320);
+        { int i = 0; for (i=0; i<6; ++i); };
 
         // Read the response, then wait out the hold period of 20ns (tH)
         isBusy = PTH & 0b10000000;
         lcd_StopTransfer;
-        (void) Timer_Sleep(0.020);
     } while (isBusy);
 }
 
@@ -118,18 +117,17 @@ void lcd_Data(byte data) {
     PTH = data;
 
     // Set up time (tAS) after RS/RW changes is 140ns minimum
-    (void) Timer_Sleep(0.140);
+    { int i = 0; for (i=0; i<3; ++i); };
 
     lcd_StartTransfer;
-    (void) Timer_Sleep(0.450);
+    { int i = 0; for (i=0; i<9; ++i); };
     lcd_StopTransfer;
 
     // the data bus and controls must be unchanged for 10ns after a transfer ends
-    (void) Timer_Sleep(0.010);
     PTH ^= PTH;  // Clear Port H after use
 
     // Then wait out a minimum pulse width after clearing the bus
-    (void) Timer_Sleep(0.450);
+   { int i = 0; for (i=0; i<9; ++i); };
 }
 
 /* Configures the bus to write to DDRAM, the text displayed on the LCD
