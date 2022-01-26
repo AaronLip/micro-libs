@@ -47,7 +47,11 @@ void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinActi
     }
 
     // Configure overflow interrupts on OCx
-    TIE = enableInt ? (TIE | 1 << channel) : (TIE & (~(1 << channel)));
+    if (enableInt) {
+        TIE |= 1 << channel;
+    } else {
+        TIE &= ~(1 << channel);
+    }
 
     // Set OCx's compare register to configure the timer's period
     switch (channel) {
