@@ -85,32 +85,33 @@ int SWL_PushedDeb(SWL_SwitchPos pos) {
     }
 }
 
+int abs(int x) {
+    if (x < 0) return -x;
+    return x;
+}
+
 // look for transitions (compares against previous call)
 int SWL_Transitions(DebounceOption deb) {
-    static int last;
+    static int last[16] = {0};
+    static int cursor = 0;
     int current = SWL_Any();
 
     // Allow some time for bouncing to settle the current sample
     if (deb == SWL_DebOn) {
-        byte i = 0;
+        int old = last[cursor] & last[abs((cursor - 1) % 16)] & last[abs((cursor - 2) % 16)];
+        int new = last[16 - cursor] & last[16 - abs((cursor - 1) % 16)] & last[16 - abs((cursor - 2) % 16)];
 
-        for (; i < 16; i++) {
-            (void) Timer_Sleep(1);
-            if (current != SWL_Any()) {
-                return 0;
-            }
-        }
+        cursor++;
+        cursor %= 16;
+        last[cursor] = current;
+
+        return old ^ new;
     }
 
     // Return any transitions between the current and last sample
-    if (current != last) {
-        int tmp = last;
-        last = current;
-        return current ^ tmp;
-    } else {
-        last = current;
-        return 0;
-    }
+    int tmp = last;
+    last = current;
+    return current ^ tmp;
 }
 
 // look for transition by switch name (compares against previous call)
