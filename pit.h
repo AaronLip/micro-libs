@@ -24,7 +24,7 @@ typedef enum Prescale {
     PWM_Prescale128 = 8
 } PWM_Prescale;
 
-void PIT_Init(double busClock, int interruptEnable);
+void PIT_Init(double busClock);
 int PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, double period);
 
 double PIT_GetFreq(PIT_Channel channel);
