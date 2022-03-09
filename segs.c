@@ -98,7 +98,7 @@ void Segs_16H(word Value, Segs_LineOption Line) {
             // Trim and adjust the address for the current line
             (3 - addr + 4 * Line) & 0x07 | 0b01011000,
             // Trim the desired nibble
-            Value / (0x1 << addr * 4) % 0x10,
+            Value / (byte) (0x1 << (int) addr * 4) % 0x10,
             // output without a decimal point
             Segs_DP_OFF);
     }
@@ -114,7 +114,7 @@ void Segs_16HP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]) {
             // Trim and adjust the address for the current line
             (3 - addr + 4 * Line) & 0x07 | 0b01011000,
             // Trim the desired nibble
-            Value / (0x1 << addr * 4) % 0x10,
+            Value / (byte) (0x1 << (int) addr * 4) % 0x10,
             // output decimal setting
             Decimals[3-addr]);
     }
@@ -146,7 +146,7 @@ void Segs_16DP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]) {
             // Trim and adjust the address for the current line
             (3 + 4 * Line - addr) & 0x07 | 0b01011000,
             // Trim the desired nibble
-            Value / magnitude,
+            (byte) (Value / magnitude),
             // output decimal setting
             Decimals[3-addr]);
     }
@@ -154,8 +154,8 @@ void Segs_16DP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]) {
 
 // show the 8-bit value starting on the digit as addr (0-6)
 void Segs_8H(byte Addr, byte Value) {
-    Segs_Normal(Addr % 8, (byte)((Value & 0xf0) >> 4), Segs_DP_OFF);
-    Segs_Normal((Addr + 1) % 8, Value & 0xf, Segs_DP_OFF);
+    Segs_Normal(Addr % 8, (byte) ((Value & 0xf0) >> 4), Segs_DP_OFF);
+    Segs_Normal((byte) ((Addr + 1) % 8), Value & 0x0f, Segs_DP_OFF);
 }
 
 // clear the display
