@@ -3,7 +3,7 @@
 
 #include "pit.h"
 
-double _busClock;
+static double _busClock;
 
 void PIT_Init(double busClock) {
     _busClock = busClock;
