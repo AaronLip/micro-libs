@@ -1,9 +1,13 @@
 #include <hidef.h>
-#include <math.h>
 #include "derivative.h"
-#include "timer.h"
 
-dword busRate;
+#include "timer.h"
+#include "runtime.h"
+
+#include <math.h>
+#include <stdio.h>
+
+static dword busRate;
 
 // Timer peripheral configuration
 void Timer_Init(
@@ -99,15 +103,20 @@ int Timer_Sleep(double milliseconds) {
     dword fullDelays;
     word remainderDelay;
 
-    // Return error value to indicate invalid configurations
-    if (TSCR1_TEN == 0 || milliseconds <= 0) {
-        return -1;
-    }
+    // Indicate invalid configurations
+    blocking_assert(milliseconds >= 0, "Failed: Timer delay must be above 0\n");
+    blocking_assert(TSCR1_TEN == 1, "Failed: Timer disabled\n");
 
     // Convert a potentially very large delay using modulo arithmetic
     cycles = Timer_Cycles(milliseconds);
     fullDelays = (dword) (long long) (cycles / 0xffff);
     remainderDelay = (word) (long) fmod(cycles, 0xffff);
+
+    {
+        char msg[21];
+        (void) sprintf(msg, "Calculating ECT delays for %0.7lf cycles", cycles);
+        info_out(msg);
+    }
 
     // Use OC6 to debug this function
     TIOS_IOS6 = 1;
@@ -156,9 +165,10 @@ int Timer_Sleep(double milliseconds) {
     TFLG1 |= TFLG1_C6F_MASK;
 
     // Ensure that the values returned by Timer_Cycles make sense
-    if (cycles < 0 || cycles / 0xffff > 0xffffffff) {
-        return -1;
-    }
+    blocking_assert(
+        cycles >= 0 || cycles / 0xffff <= 0xffffffff,
+        "Failed: Timer cycles are nonsense or exceed capacity\n"
+    );
 
     // Return success
     return 0;
@@ -168,11 +178,46 @@ int Timer_Sleep(double milliseconds) {
 
 // Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period and Tc = period of the clock
 double Timer_Cycles(double delayMilliseconds) {
-    return (delayMilliseconds / 1E3) * busRate / PRESCALE;
+    double cycles = (delayMilliseconds / 1E3) * busRate / PRESCALE;
+
+    {
+        char msg[100];
+        (void) sprintf(
+            msg,
+            "Calculating ECT cycles for %0.3lf milliseconds:\n\t%0.3lf cycles\n",
+            delayMilliseconds,
+            cycles
+        );
+        info_out(msg);
+    }
+
+    (void) debug_assert(
+        cycles < 0 || cycles > 0xffff,
+        "Debug: cycles are outside of expected range\n"
+    );
+    return cycles;
 }
 
 double Timer_FreqCycles(double targetFrequency) {
-    return (double) (busRate / (PRESCALE * targetFrequency)) / 2;
+    double cycles = (double) (busRate / (PRESCALE * targetFrequency)) / 2;
+
+        {
+        char msg[100];
+        (void) sprintf(
+            msg,
+            "Calculating ECT cycles for %0.3lf Hz:\n\t%0.3lf cycles\n",
+            targetFrequency,
+            cycles
+        );
+        info_out(msg);
+    }
+
+    (void) debug_assert(
+        cycles < 0 || cycles > 0xffff,
+        "Debug: cycles are outside of expected range\n"
+    );
+
+    return cycles;
 }
 
 #undef PRESCALE
