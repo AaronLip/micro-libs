@@ -90,29 +90,29 @@ int abs(int x) {
     return x;
 }
 
-// look for transitions (compares against previous call)
-int SWL_Transitions(DebounceOption deb) {
-    static int last[16] = {0};
-    static int cursor = 0;
-    int current = SWL_Any();
+// // look for transitions (compares against previous call)
+// int SWL_Transitions(DebounceOption deb) {
+//     static int last[16] = {0};
+//     static int cursor = 0;
+//     int current = SWL_Any();
 
-    // Allow some time for bouncing to settle the current sample
-    if (deb == SWL_DebOn) {
-        int old = last[cursor] & last[abs((cursor - 1) % 16)] & last[abs((cursor - 2) % 16)];
-        int new = last[16 - cursor] & last[16 - abs((cursor - 1) % 16)] & last[16 - abs((cursor - 2) % 16)];
+//     // Allow some time for bouncing to settle the current sample
+//     if (deb == SWL_DebOn) {
+//         int old = last[cursor] & last[abs((cursor - 1) % 16)] & last[abs((cursor - 2) % 16)];
+//         int new = last[16 - cursor] & last[16 - abs((cursor - 1) % 16)] & last[16 - abs((cursor - 2) % 16)];
 
-        cursor++;
-        cursor %= 16;
-        last[cursor] = current;
+//         cursor++;
+//         cursor %= 16;
+//         last[cursor] = current;
 
-        return old ^ new;
-    }
+//         return old ^ new;
+//     }
 
-    // Return any transitions between the current and last sample
-    int tmp = last;
-    last = current;
-    return current ^ tmp;
-}
+//     // Return any transitions between the current and last sample
+//     int tmp = last;
+//     last = current;
+//     return current ^ tmp;
+// }
 
 // look for transition by switch name (compares against previous call)
 int SWL_Transition(SWL_SwitchPos pos, DebounceOption deb) {

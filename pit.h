@@ -9,8 +9,8 @@ typedef enum Channel {
 } PIT_Channel;
 
 typedef enum Timebase {
-    PIT_Micro_Timebase0 = 0,
-    PIT_Micro_Timebase1 = 1
+    PIT_Timebase0 = 0,
+    PIT_Timebase1 = 1
 } PIT_Timebase;
 
 typedef enum Prescale {
