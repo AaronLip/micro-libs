@@ -2,12 +2,10 @@
 #include "derivative.h" /* derivative-specific definitions */
 
 #include "pit.h"
-#include "segs.h"
 
 static double _busClock;
 
 void PIT_Init(double busClock) {
-    Segs_Init();
     _busClock = busClock;
 
     /* Enable the periodic interrupt timer, configured to stall on freeze
@@ -35,7 +33,6 @@ int PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, double per
 
     {
         double PITDCycles = PIT_GetPITDCycles(channel, period);
-        Segs_16D((word) (long) PITDCycles, Segs_LineTop);
         if (0 <= PITDCycles && PITDCycles <= 0xffff) {
             switch (channel) {
                 case PIT_Channel0:
@@ -68,13 +65,11 @@ int PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, double per
 double PIT_GetPITDCycles(PIT_Channel channel, double period) {
     byte timebase;
 
-    if (PITMUX & (1 << maskedChannel)) {
+    if (PITMUX & (1 << channel)) {
         timebase = PITMTLD1;
     } else {
         timebase = PITMTLD0;
     }
-
-    Segs_16D((word) (long) _busClock, Segs_LineBottom);
 
     return (((double) timebase + 1) / period * _busClock) - 1;
 }
