@@ -7,20 +7,21 @@
 #include <math.h>
 #include <stdio.h>
 
-static dword busRate;
+static double busRate;
 
 // Timer peripheral configuration
 void Timer_Init(
-    dword busClock,            // kHz, allowing up to approx. 65.5MHz. (20MHz default)
+    double busClock,            // kHz, allowing up to approx. 65.5MHz. (20MHz default)
     Timer_Prescale prescale    // Divides the bus clock signal for longer durations
 ) {
     // Store busRate somewhere (though we can calculate this internally if we are not using an external oscillator)
     busRate = busClock;
 
-    // Disable the timer for programming
-    TSCR1_TEN = 0;
-
-    TSCR1 &= (~0b01100000);  // Disable stops, freezing, and fast clear
+    TSCR1_TEN = 0;    // Disable the timer for programming
+    TSCR1_TSWAI = 0;  // Allow timer to run while micro is waiting
+    TSCR1_TSFRZ = 1;  // But disable while frozen for the HWAVE debugger
+    TSCR1_TFFCA = 0;  // Turn off fast flag clear - clears are explicit by writing 1
+    TSCR1_PRNT = 0;   // 
     TSCR1 &= (~0b00011000);  // Turn off fast clear, set to legacy mode
     
     // Configure free run counting
@@ -36,7 +37,7 @@ void Timer_Init(
     return;
 }
 
-#define T_OFFSET(TC_REGISTER) TC_REGISTER = TCNT + initialOffset; break;
+#define T_OFFSET(TC_REGISTER) case Timer_Channel##TC_REGISTER: TC##TC_REGISTER = TCNT + initialOffset; break;
 void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinAction pinAction, word enableInt) {
     // Use OCx as output compare
     TIOS |= 1 << channel;
@@ -59,22 +60,14 @@ void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinActi
 
     // Set OCx's compare register to configure the timer's period
     switch (channel) {
-        case Timer_Channel0:
-            T_OFFSET(TC0);
-        case Timer_Channel1:
-            T_OFFSET(TC1);
-        case Timer_Channel2:
-            T_OFFSET(TC2);
-        case Timer_Channel3:
-            T_OFFSET(TC3);
-        case Timer_Channel4:
-            T_OFFSET(TC4);
-        case Timer_Channel5:
-            T_OFFSET(TC5);
-        case Timer_Channel6:
-            T_OFFSET(TC6);
-        case Timer_Channel7:
-            T_OFFSET(TC7);
+        T_OFFSET(0);
+        T_OFFSET(1);
+        T_OFFSET(2);
+        T_OFFSET(3);
+        T_OFFSET(4);
+        T_OFFSET(5);
+        T_OFFSET(6);
+        T_OFFSET(7);
         default:
             break;
     }
@@ -84,19 +77,34 @@ void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinActi
 }
 #undef T_OFFSET
 
-int Timer_Rearm(Timer_Channel channel, word cycleOffset) {
+#define T_REARM(TC_REGISTER) case Timer_Channel##TC_REGISTER: TC##TC_REGISTER += offset; break;
+int Timer_Rearm(Timer_Channel channel, word offset) {
 
     // Check the timer flag
     if (TFLG1 & (1 << channel)) {
 
         // Clear and Rearm the flag
         TFLG1 |= (1 << channel);
-        TFLG1 += cycleOffset;
+        
+        // Rearm the compare count using a lookup
+        switch (channel) {
+            T_REARM(0);
+            T_REARM(1);
+            T_REARM(2);
+            T_REARM(3);
+            T_REARM(4);
+            T_REARM(5);
+            T_REARM(6);
+            T_REARM(7);
+            default:
+                break;
+        }
 
         // Notify the caller
         return 1;
     }   return 0;
 }
+#undef T_REARM
 
 int Timer_Sleep(double milliseconds) {
     double cycles;
@@ -111,12 +119,6 @@ int Timer_Sleep(double milliseconds) {
     cycles = Timer_Cycles(milliseconds);
     fullDelays = (dword) (long long) (cycles / 0xffff);
     remainderDelay = (word) (long) fmod(cycles, 0xffff);
-
-    {
-        char msg[21];
-        (void) sprintf(msg, "Calculating ECT delays for %0.7lf cycles", cycles);
-        info_out(msg);
-    }
 
     // Use OC6 to debug this function
     TIOS_IOS6 = 1;
@@ -166,8 +168,8 @@ int Timer_Sleep(double milliseconds) {
 
     // Ensure that the values returned by Timer_Cycles make sense
     blocking_assert(
-        cycles >= 0 || cycles / 0xffff <= 0xffffffff,
-        "Failed: Timer cycles are nonsense or exceed capacity\n"
+        cycles >= 0 && cycles / 0xffff <= 0xffffffff,
+        "Timer cycles are nonsense or exceed capacity\n"
     );
 
     // Return success
@@ -180,42 +182,25 @@ int Timer_Sleep(double milliseconds) {
 double Timer_Cycles(double delayMilliseconds) {
     double cycles = (delayMilliseconds / 1E3) * busRate / PRESCALE;
 
-    {
-        char msg[100];
-        (void) sprintf(
-            msg,
-            "Calculating ECT cycles for %0.3lf milliseconds:\n\t%0.3lf cycles\n",
-            delayMilliseconds,
-            cycles
-        );
-        info_out(msg);
-    }
-
+    #ifdef __TIMER_H_DEBUG__
     (void) debug_assert(
-        cycles < 0 || cycles > 0xffff,
-        "Debug: cycles are outside of expected range\n"
+        0 < cycles && cycles <= 0xffff,
+        "cycles are outside of expected range\n"
     );
+    #endif
+
     return cycles;
 }
 
 double Timer_FreqCycles(double targetFrequency) {
-    double cycles = (double) (busRate / (PRESCALE * targetFrequency)) / 2;
+    double cycles = Timer_Cycles(pow(2 * targetFrequency, -1.0));
 
-        {
-        char msg[100];
-        (void) sprintf(
-            msg,
-            "Calculating ECT cycles for %0.3lf Hz:\n\t%0.3lf cycles\n",
-            targetFrequency,
-            cycles
-        );
-        info_out(msg);
-    }
-
+    #ifdef __TIMER_H_DEBUG__
     (void) debug_assert(
-        cycles < 0 || cycles > 0xffff,
-        "Debug: cycles are outside of expected range\n"
+        0 < cycles && cycles <= 0xffff,
+        "cycles are outside of expected range\n"
     );
+    #endif
 
     return cycles;
 }

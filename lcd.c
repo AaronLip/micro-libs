@@ -30,7 +30,7 @@ void lcd_Init() {
 
     // Wait for display MPU to boot itself
     Timer_Init(20E6, Timer_Prescale1);
-    Timer_Channel_Init(Timer_Channel7, (word) (long) Timer_Cycles(15.0), Timer_Pin_Disco, 0);
+    Timer_Channel_Init(Timer_Channel7, (word) (long) Timer_Cycles(15), Timer_Pin_Disco, 0);
     (void) Timer_Sleep(15.0);
 
     // Begin 8-bit init handshake; show the 8-bit for 4.1ms, then 100us, then a final time

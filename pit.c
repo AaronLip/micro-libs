@@ -16,9 +16,7 @@ void PIT_Init(double busClock) {
 }
 
 void PIT_Timebase_Init(PIT_Timebase microTimebase, byte countdownValue) {
-    byte maskedTimebase = microTimebase & 0x1;
-
-    switch (maskedTimebase)
+    switch (microTimebase)
     {
         case PIT_Timebase0:
             PITMTLD0 = countdownValue;
@@ -32,11 +30,8 @@ void PIT_Timebase_Init(PIT_Timebase microTimebase, byte countdownValue) {
 }
 
 int PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, double period) {
-    byte maskedChannel = channel & 0xf;
-    byte maskedTimebase = microTimebase & 0x1;
-    
     // Configure the micro timebase first, in case the PIT is currently running
-    PITMUX &= ~(maskedTimebase << maskedChannel);
+    PITMUX &= ~(microTimebase << channel);
 
     {
         double PITDCycles = PIT_GetPITDCycles(channel, period);
@@ -62,17 +57,16 @@ int PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, double per
     }
     
     // Enable interrupts on the selected channel
-    PITINTE |= 1 << maskedChannel;
+    PITINTE |= 1 << channel;
 
     // Turn the channel on
-    PITCE |= 1 << maskedChannel;
+    PITCE |= 1 << channel;
 }
 
 /* Get the amount of PITLD cycles required for a given period, given the
  * current configuration of a channel */
 double PIT_GetPITDCycles(PIT_Channel channel, double period) {
-    byte maskedChannel = channel & 0xf;
-    byte timebase = 0;
+    byte timebase;
 
     if (PITMUX & (1 << maskedChannel)) {
         timebase = PITMTLD1;

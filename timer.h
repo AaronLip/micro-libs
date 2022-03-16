@@ -33,7 +33,7 @@ typedef enum Timer_Channel
     Timer_Channel7 = 7
 } Timer_Channel;
 
-void Timer_Init(dword busClock, Timer_Prescale prescale);
+void Timer_Init(double busClock, Timer_Prescale prescale);
 void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinAction pinAction, word enableInt);
 int Timer_Rearm(Timer_Channel channel, word cycleOffset);
 int Timer_Sleep(double milliseconds);
