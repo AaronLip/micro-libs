@@ -29,8 +29,8 @@ void SCI0_WriteString(char const *stringAddr) {
 }
 
 double SCI0_Init(double busClock, double baudRate) {
-    // Clear and set the baud rate
-    SCI0BD_SBR = (word) (long) (busClock / (16 * baudRate));
+    // Clear and set the baud rate, using a x10+5 modifier to correctly round
+    SCI0BD_SBR = (word) (long) ((10 * busClock / (16 * baudRate)) + 5) / 10;
 
     // Enable transmit and receive
     SCI0CR2_TE = 1;
