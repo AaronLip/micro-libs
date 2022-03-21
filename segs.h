@@ -1,5 +1,4 @@
-#ifndef _SEGS_H_
-#define _SEGS_H_
+#pragma ONCE
 
 // for functions that want to add/kill the decimal point
 typedef enum Segs_DPOption
@@ -50,5 +49,3 @@ void Segs_SayErr(Segs_LineOption Line);
 // deprecated after term 1202
 // say 'help' as best the 7-segs can show
 void Segs_SayHelp(void);
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _SWL_led_H_
-#define _SWL_led_H_
+#pragma ONCE
 
 typedef enum LEDColour {
     SWL_RED     = 0b10000000,
@@ -50,5 +49,3 @@ int SWL_Transitions(DebounceOption deb);
 
 // look for transition by switch name (compares against previous call)
 int SWL_Transition(SWL_SwitchPos pos, DebounceOption deb);
-
-#endif

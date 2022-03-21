@@ -1,5 +1,4 @@
-#ifndef _SCI_H_
-#define _SCI_H_
+#pragma ONCE
 
 double SCI0_Init(double busClock, double baudRate);
 
@@ -10,5 +9,3 @@ void SCI0_BlockWrite(byte data);
 void SCI0_WriteString(char const *stringAddr);
 
 int SCI0_ReadString(char *const buffer, int bufferLength);
-
-#endif

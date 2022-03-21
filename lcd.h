@@ -1,5 +1,4 @@
-#ifndef _LCD_H_
-#define _LCD_H_
+#pragma ONCE
 
 // Initializes the LCD
 void lcd_Init(void);
@@ -42,5 +41,3 @@ void lcd_ShiftR(void);
 
 void lcd_CGAddr(byte addr);
 void lcd_CGChar(byte cgAddr, char const * const cgData);
-
-#endif

@@ -1,6 +1,3 @@
-#ifndef _INTERRUPTS_H_
-#define _INTERRUPTS_H_
+#pragma ONCE
 
 void interrupts_Init(void);
-
-#endif
