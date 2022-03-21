@@ -3,6 +3,7 @@
 
 #include "timer.h"
 #include "runtime.h"
+#include "sci.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -37,8 +38,20 @@ void Timer_Init(
     return;
 }
 
-#define T_OFFSET(TC_REGISTER) case Timer_Channel##TC_REGISTER: TC##TC_REGISTER = TCNT + initialOffset; break;
-void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinAction pinAction, word enableInt) {
+void Timer_Interrupt(Timer_Channel channel, int enable) {
+    if (enable) {
+        TIE |= 1 << channel; // Be cautious not to write 1s to other channels
+    } else {
+        TIE &= ~(1 << channel);
+    }
+}
+
+#define T_OFFSET(TC_REGISTER) \
+case Timer_Channel##TC_REGISTER:\
+    TC##TC_REGISTER = (word) (long) Timer_Cycles(timing);\
+    break;
+
+void Timer_Channel_Init(Timer_Channel channel, Timer_Quantity timing, Timer_PinAction pinAction, int enable) {
     // Use OCx as output compare
     TIOS |= 1 << channel;
 
@@ -52,11 +65,7 @@ void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinActi
     }
 
     // Configure overflow interrupts on OCx
-    if (enableInt) {
-        TIE |= 1 << channel;
-    } else {
-        TIE &= ~(1 << channel);
-    }
+    Timer_Interrupt(channel, enable);
 
     // Set OCx's compare register to configure the timer's period
     switch (channel) {
@@ -73,12 +82,16 @@ void Timer_Channel_Init(Timer_Channel channel, word initialOffset, Timer_PinActi
     }
 
     // Initialize channel x timer flag by clearing
-    TFLG1 |= 1 << channel;  // Be cautious not to write 1s to other channels
+    TFLG1 |= 1 << channel;  
 }
 #undef T_OFFSET
 
-#define T_REARM(TC_REGISTER) case Timer_Channel##TC_REGISTER: TC##TC_REGISTER += offset; break;
-int Timer_Rearm(Timer_Channel channel, word offset) {
+#define T_REARM(TC_REGISTER) \
+case Timer_Channel##TC_REGISTER:\
+    TC##TC_REGISTER += (word) (long) Timer_Cycles(timing);\
+    break;
+
+int Timer_Rearm(Timer_Channel channel, Timer_Quantity timing) {
 
     // Check the timer flag
     if (TFLG1 & (1 << channel)) {
@@ -106,17 +119,17 @@ int Timer_Rearm(Timer_Channel channel, word offset) {
 }
 #undef T_REARM
 
-int Timer_Sleep(double milliseconds) {
+int Timer_Sleep(Timer_Quantity timing) {
     double cycles;
     dword fullDelays;
     word remainderDelay;
 
     // Indicate invalid configurations
-    blocking_assert(milliseconds >= 0, "Failed: Timer delay must be above 0\n");
+    blocking_assert(timing.value >= 0, "Failed: Timer delay must be above 0\n");
     blocking_assert(TSCR1_TEN == 1, "Failed: Timer disabled\n");
 
     // Convert a potentially very large delay using modulo arithmetic
-    cycles = Timer_Cycles(milliseconds);
+    cycles = Timer_Cycles(timing);
     fullDelays = (dword) (long long) (cycles / 0xffff);
     remainderDelay = (word) (long) fmod(cycles, 0xffff);
 
@@ -176,27 +189,47 @@ int Timer_Sleep(double milliseconds) {
     return 0;
 }
 
-#define PRESCALE (word) (1 << TSCR2 & TSCR2_PR_MASK)
+#define PRESCALE (word) (1 << TSCR2_PR)
 
 // Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period and Tc = period of the clock
-double Timer_Cycles(double delayMilliseconds) {
-    double cycles = (delayMilliseconds / 1E3) * busRate / PRESCALE;
+double Timer_Cycles(Timer_Quantity timing) {
+    double cycles;
+
+    // Disable recursion warning because it is a false positive 
+    #pragma MESSAGE DISABLE C1855
+
+    switch (timing.type)
+    {
+        case Timer_Period:
+            {
+                Timer_Quantity t;
+                t.type = Timer_Interval;
+                t.value = timing.value / 2;
+
+                cycles = Timer_Cycles(t); 
+            }
+            break;
+        case Timer_Interval:
+            cycles = (timing.value / 1E3) * busRate / PRESCALE;
+            break;
+        case Timer_Frequency:
+            {
+                Timer_Quantity t;
+                t.type = Timer_Period;
+                t.value = pow(2 * timing.value, -1.0);
+
+                cycles = Timer_Cycles(t);
+            }
+            break;
+        default:
+            break;
+    }
+
+    // Re-enable recursion warning
+    #pragma MESSAGE WARNING C1855
 
     #ifdef __TIMER_H_DEBUG__
-    (void) debug_assert(
-        0 < cycles && cycles <= 0xffff,
-        "cycles are outside of expected range\n"
-    );
-    #endif
-
-    return cycles;
-}
-
-double Timer_FreqCycles(double targetFrequency) {
-    double cycles = Timer_Cycles(pow(2 * targetFrequency, -1.0));
-
-    #ifdef __TIMER_H_DEBUG__
-    (void) debug_assert(
+    (void) blocking_assert(
         0 < cycles && cycles <= 0xffff,
         "cycles are outside of expected range\n"
     );
