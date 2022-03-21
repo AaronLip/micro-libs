@@ -75,7 +75,8 @@ int SWL_PushedDeb(SWL_SwitchPos pos) {
         byte i = 0;
 
         for (; i < 16; i++) {
-            (void) Timer_Sleep(1);
+            Timer_Quantity t = { Timer_Period, 1 };
+            (void) Timer_Sleep(t);
             if (SWL_Pushed(pos) != last) {
                 return 0;
             }

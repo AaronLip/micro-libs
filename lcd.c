@@ -30,15 +30,21 @@ void lcd_Init() {
 
     // Wait for display MPU to boot itself
     Timer_Init(20E6, Timer_Prescale1);
-    Timer_Channel_Init(Timer_Channel7, (word) (long) Timer_Cycles(15), Timer_Pin_Disco, 0);
-    (void) Timer_Sleep(15.0);
+    {
+        Timer_Quantity t = { Timer_Interval, 15 };
+        Timer_Channel_Init(Timer_Channel7, t, Timer_Pin_Disco, 0);
+        (void) Timer_Sleep(t);
+    }
 
     // Begin 8-bit init handshake; show the 8-bit for 4.1ms, then 100us, then a final time
     PTH = 0x30;  // Function set 8-bit (bits 0:3 don't matter)
 
     // Long knock
     lcd_StartTransfer;
-    (void) Timer_Sleep(4.1);
+    {
+        Timer_Quantity t = { Timer_Interval, 4.1 };
+        (void) Timer_Sleep(t);
+    }
     lcd_StopTransfer;
 
     // Short knock
