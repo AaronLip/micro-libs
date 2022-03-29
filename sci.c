@@ -16,6 +16,15 @@ byte SCI0_BlockRead() {
     return SCI0DRL;
 }
 
+int SCI0_Write(byte data) {
+    // Copy because registers may change between accesses
+    byte status = SCI0SR1_TDRE;
+
+    if (status) SCI0DRL = data;
+
+    return status;
+}
+
 void SCI0_BlockWrite(byte data) {
     while (!SCI0SR1_TDRE);
 

@@ -5,6 +5,7 @@ double SCI0_Init(double busClock, double baudRate);
 int SCI0_Read(char const *data);
 byte SCI0_BlockRead(void);
 
+int SCI0_Write(byte data);
 void SCI0_BlockWrite(byte data);
 void SCI0_WriteString(char const *stringAddr);
 
