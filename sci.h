@@ -2,7 +2,7 @@
 
 double SCI0_Init(double busClock, double baudRate);
 
-int SCI0_Read(char const *data);
+int SCI0_Read(char *data);
 byte SCI0_BlockRead(void);
 
 int SCI0_Write(byte data);
