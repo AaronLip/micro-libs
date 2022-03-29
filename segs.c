@@ -135,6 +135,12 @@ void Segs_16D(word Value, Segs_LineOption Line) {
     }
 }
 
+// Display a pair of values on the 7-segs
+void Segs_16D2(word ValueTop, word ValueBottom) {
+    Segs_16D(ValueTop, Segs_LineTop);
+    Segs_16D(ValueBottom, Segs_LineBottom);
+}
+
 // show a 16-bit value on the upper or lower display with specified decimal points
 void Segs_16DP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]) {
     byte addr = 0;

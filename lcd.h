@@ -30,6 +30,7 @@ void lcd_Data(byte val);
  */
 void lcd_Addr(byte addr);
 void lcd_AddrXY(byte ix, byte iy);
+void lcd_StringRaw(char const *straddr);
 void lcd_String(char const *straddr);
 void lcd_StringXY(byte ix, byte iy, char const * const straddr);
 

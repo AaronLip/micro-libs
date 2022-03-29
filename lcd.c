@@ -1,5 +1,5 @@
-#include <hidef.h>      /* common defines and macros */
-#include "derivative.h" /* derivative-specific definitions */
+#include <hidef.h>
+#include "derivative.h"
 
 #include "lcd.h"
 #include "timer.h"
@@ -164,9 +164,65 @@ void lcd_AddrXY(byte ix, byte iy) {
 /* Writes a null-terminated shift-JIS string
  * The first 0x0f values are reserved for CGRAM characters
  */
-void lcd_String(char const *straddr) {
+void lcd_StringRaw(char const *straddr) {
     for (; *straddr; straddr++) {
         lcd_Data(*straddr);
+    }
+}
+
+/* Overwrites the contents of the lcd using carriage returns (\n) to iterate
+ * lines. This is a slow operation and should be rate-limited to ensure
+ * responsiveness to user input. A re-entrant version may be worth
+ * implementing. */
+void lcd_String(char const *straddr) {
+    byte line = 0;
+
+    lcd_AddrXY(0, 0);
+
+    while (line < 4) {
+        const byte lcdLineLength = 0x14;
+        const char spaceCharacter = 0x20;
+        byte character = 0;
+
+        for (; character < lcdLineLength; character++) {
+            switch (*straddr) {
+                // Next line carriage return
+                case '\n':
+                    // Fast forward line and pad with spaces
+                    while (character++ < lcdLineLength) lcd_Data(spaceCharacter);
+                    straddr++;
+                    break;
+
+                // Trap straddr read, space pad output
+                case '\0':
+                    lcd_Data(spaceCharacter);
+                    break;
+
+                // Invisible optional line feed
+                case '\r':
+                    straddr++;
+                    break;
+
+                // Output to LCD
+                default:
+                    lcd_Data(*straddr);
+                    if (character == lcdLineLength - 1) {
+                        /* LCD line is full now, clip the input text by fast
+                         * forwarding to next line or end of string. */
+                        while (!(*straddr == '\n' || *straddr == '\0')) straddr++;
+                    } else {
+                        straddr++;
+                    }
+                    break;
+            }
+        }
+
+        // Update line
+        lcd_AddrXY(0, ++line);
+
+        /* lcd line is full now, so fast forward to next line of text or
+         * the end of the string */
+        //while (!(*straddr == '\n' || *straddr == '\0')) straddr++;
     }
 }
 
