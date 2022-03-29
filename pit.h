@@ -13,23 +13,21 @@ typedef enum PIT_Timebase {
 } PIT_Timebase;
 
 typedef enum PIT_Prescale {
-    PWM_Prescale1 = 0,
-    PWM_Prescale2 = 1,
-    PWM_Prescale4 = 2,
-    PWM_Prescale8 = 4,
-    PWM_Prescale16 = 5,
-    PWM_Prescale32 = 6,
-    PWM_Prescale64 = 7,
-    PWM_Prescale128 = 8
-} PWM_Prescale;
+    PIT_Prescale1 = 0,
+    PIT_Prescale2 = 1,
+    PIT_Prescale4 = 2,
+    PIT_Prescale8 = 4,
+    PIT_Prescale16 = 5,
+    PIT_Prescale32 = 6,
+    PIT_Prescale64 = 7,
+    PIT_Prescale128 = 8
+} PIT_Prescale;
 
 typedef enum PIT_Type {
     PIT_Interval,  // One PIT event per duration of input value
     PIT_Period,    // Two PIT events per duration of input value
     PIT_Frequency  // Twice the input value in events per second
-    
 } PIT_Type;
-
 typedef struct PIT_Quantity { PIT_Type type; double value; } PIT_Quantity;
 
 typedef struct PIT_Pair { word ld; byte mtld; } PIT_Pair;

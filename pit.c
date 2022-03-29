@@ -1,5 +1,5 @@
-#include <hidef.h>      /* common defines and macros */
-#include "derivative.h" /* derivative-specific definitions */
+#include <hidef.h>
+#include "derivative.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -81,7 +81,21 @@ void PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, PIT_Quant
 }
 
 PIT_Pair PIT_Solve(PIT_Quantity timing) {
-    double cycles = (10 * timing.value * _busClock / 1e6 + 5) / 10;
+    double interval = timing.value;
+    double cycles;
+    
+    switch (timing.type) {
+        case PIT_Interval:
+            break;
+        case PIT_Period:
+            interval *= 2;
+            break;
+        case PIT_Frequency:
+            interval = pow(interval, -1);
+            break;
+    }
+
+    cycles = (10 * interval * _busClock / 1e6 + 5) / 10;
 
     blocking_assert(
         0 < cycles && cycles <= ((dword) 0xffff + 1) * (0xff + 1),
@@ -94,6 +108,12 @@ PIT_Pair PIT_Solve(PIT_Quantity timing) {
         // Disable unnecessary info message about conditions being always true/false
         #pragma MESSAGE DISABLE C4000
         #pragma MESSAGE DISABLE C4001
+
+        // for (pair.mtld = 1; (word) pair.mtld + 1 <= 0xff; pair.mtld++) {
+        //     if ((byte) (int) fmod(cycles, pair.mtld) < 1) break;
+        //     if (cycles / pair.mtld > 0xffff) break;
+        //     blocking_assert(pair.mtld != 0xff, "Failed: No factors could be found");
+        // }
 
         while ((word) pair.mtld + 1 <= 0xff && (
             (byte) (int) fmod(cycles, pair.mtld) >= 1 \
