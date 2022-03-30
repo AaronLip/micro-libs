@@ -3,7 +3,7 @@
 
 #include "runtime.h"
 
-int SCI0_Read(char *data) {
+int SCI0_Read(byte *data) {
     if (SCI0SR1_RDRF) {
         *data = SCI0DRL;
         return 1;
