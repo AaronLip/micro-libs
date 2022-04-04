@@ -1,5 +1,5 @@
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
 
 #include "pwidth.h"
 

@@ -1,12 +1,13 @@
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
 
 #include <math.h>
 #include <stdio.h>
 
+#include <interaction/runtime.h>
+#include <interaction/sci.h>
+
 #include "pit.h"
-#include "runtime.h"
-#include "sci.h"
 
 static double _busClock;
 
@@ -62,12 +63,12 @@ void PIT_Init(double busClock) {
     PITCFLMT = 0b10100000;
 }
 
-void PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, PIT_Quantity timing, int enable) {
+void PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, Time_Type type, double timing, int enable) {
     // Configure the micro timebase first, in case the PIT is currently running
     PITMUX &= ~(microTimebase << channel);
 
     {
-        PIT_Pair solution = PIT_Solve(timing);
+        PIT_Pair solution = PIT_Solve(type, timing);
 
         PIT_Timebase_Set(microTimebase, solution.mtld);
         PIT_Channel_Set(channel, solution.ld);
@@ -80,22 +81,21 @@ void PIT_Channel_Init(PIT_Channel channel, PIT_Timebase microTimebase, PIT_Quant
     PITCE |= 1 << channel;
 }
 
-PIT_Pair PIT_Solve(PIT_Quantity timing) {
-    double interval = timing.value;
+PIT_Pair PIT_Solve(Time_Type type, double timing) {
     double cycles;
     
-    switch (timing.type) {
-        case PIT_Interval:
+    switch (type) {
+        case Time_Interval:
             break;
-        case PIT_Period:
-            interval *= 2;
+        case Time_Period:
+            timing *= 2;
             break;
-        case PIT_Frequency:
-            interval = pow(interval, -1);
+        case Time_Frequency:
+            timing = pow(timing, -1);
             break;
     }
 
-    cycles = (10 * interval * _busClock / 1e6 + 5) / 10;
+    cycles = (10 * timing * _busClock / 1e6 + 5) / 10;
 
     blocking_assert(
         0 < cycles && cycles <= ((dword) 0xffff + 1) * (0xff + 1),

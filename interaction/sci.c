@@ -1,31 +1,32 @@
 #include <hidef.h>
 #include "derivative.h"
 
+#include "sci.h"
 #include "runtime.h"
 
-int SCI0_Read(byte *data) {
+int SCI0_Read(char *data) {
     if (SCI0SR1_RDRF) {
         *data = SCI0DRL;
         return 1;
     } return 0;
 }
 
-byte SCI0_BlockRead() {
+char SCI0_BlockRead() {
     while (!SCI0SR1_RDRF);
 
     return SCI0DRL;
 }
 
-int SCI0_Write(byte data) {
+int SCI0_Write(char data) {
     // Copy because registers may change between accesses
-    byte status = SCI0SR1_TDRE;
+    int status = SCI0SR1_TDRE;
 
     if (status) SCI0DRL = data;
 
     return status;
 }
 
-void SCI0_BlockWrite(byte data) {
+void SCI0_BlockWrite(char data) {
     while (!SCI0SR1_TDRE);
 
     SCI0DRL = data;

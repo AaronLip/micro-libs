@@ -1,12 +1,12 @@
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
 
-#include "timer.h"
-#include "runtime.h"
-#include "sci.h"
+#include <runtime.h>
 
 #include <math.h>
 #include <stdio.h>
+
+#include "timer.h"
 
 static double busRate;
 
@@ -48,10 +48,10 @@ void Timer_Interrupt(Timer_Channel channel, int enable) {
 
 #define T_OFFSET(TC_REGISTER) \
 case Timer_Channel##TC_REGISTER:\
-    TC##TC_REGISTER = (word) (long) Timer_Cycles(timing);\
+    TC##TC_REGISTER = (word) (long) Timer_Cycles(type, timing);\
     break;
 
-void Timer_Channel_Init(Timer_Channel channel, Timer_Quantity timing, Timer_PinAction pinAction, int enable) {
+void Timer_Channel_Init(Timer_Channel channel, Time_Type type, double timing, Timer_PinAction pinAction, int enable) {
     // Use OCx as output compare
     TIOS |= 1 << channel;
 
@@ -88,10 +88,10 @@ void Timer_Channel_Init(Timer_Channel channel, Timer_Quantity timing, Timer_PinA
 
 #define T_REARM(TC_REGISTER) \
 case Timer_Channel##TC_REGISTER:\
-    TC##TC_REGISTER += (word) (long) Timer_Cycles(timing);\
+    TC##TC_REGISTER += (word) (long) Timer_Cycles(type, timing);\
     break;
 
-int Timer_Rearm(Timer_Channel channel, Timer_Quantity timing) {
+int Timer_Rearm(Timer_Channel channel, Time_Type type, double timing) {
 
     // Check the timer flag
     if (TFLG1 & (1 << channel)) {
@@ -119,17 +119,17 @@ int Timer_Rearm(Timer_Channel channel, Timer_Quantity timing) {
 }
 #undef T_REARM
 
-int Timer_Sleep(Timer_Quantity timing) {
+int Timer_Sleep(Time_Type type, double timing) {
     double cycles;
     dword fullDelays;
     word remainderDelay;
 
     // Indicate invalid configurations
-    blocking_assert(timing.value >= 0, "Failed: Timer delay must be above 0\n");
+    blocking_assert(timing >= 0, "Failed: Timer delay must be above 0\n");
     blocking_assert(TSCR1_TEN == 1, "Failed: Timer disabled\n");
 
     // Convert a potentially very large delay using modulo arithmetic
-    cycles = Timer_Cycles(timing);
+    cycles = Timer_Cycles(type, timing);
     fullDelays = (dword) (long long) (cycles / 0xffff);
     remainderDelay = (word) (long) fmod(cycles, 0xffff);
 
@@ -192,34 +192,22 @@ int Timer_Sleep(Timer_Quantity timing) {
 #define PRESCALE (word) (1 << TSCR2_PR)
 
 // Tx / Tc yields the amount of cycles to generate a target period, where Tx = target period and Tc = period of the clock
-double Timer_Cycles(Timer_Quantity timing) {
+double Timer_Cycles(Time_Type type, double timing) {
     double cycles;
 
     // Disable recursion warning because it is a false positive 
     #pragma MESSAGE DISABLE C1855
 
-    switch (timing.type)
+    switch (type)
     {
-        case Timer_Period:
-            {
-                Timer_Quantity t;
-                t.type = Timer_Interval;
-                t.value = timing.value / 2;
-
-                cycles = Timer_Cycles(t); 
-            }
+        case Time_Period:
+            cycles = Timer_Cycles(Time_Interval, timing / 2); 
             break;
-        case Timer_Interval:
-            cycles = (timing.value / 1E3) * busRate / PRESCALE;
+        case Time_Interval:
+            cycles = (timing / 1E3) * busRate / PRESCALE;
             break;
-        case Timer_Frequency:
-            {
-                Timer_Quantity t;
-                t.type = Timer_Period;
-                t.value = pow(2 * timing.value, -1.0);
-
-                cycles = Timer_Cycles(t);
-            }
+        case Time_Frequency:
+            cycles = Timer_Cycles(Time_Period, pow(2 * timing, -1.0));
             break;
         default:
             break;

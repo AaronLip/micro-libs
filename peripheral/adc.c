@@ -1,5 +1,7 @@
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
+
+#include <interaction/SWL_led.h>
 
 #include "adc.h"
 
@@ -29,17 +31,18 @@ void adc_Init(int enableInterrupts) {
      * startup */
     ATD0CTL4_PRS = 4;
 
-    ATD0CTL5_DJM = 1;  // Right align the result bits
-    ATD0CTL5_DSGN = 0;  // Unsigned results
-    ATD0CTL5_SCAN = 1;  // Keep scanning
-    ATD0CTL5_MULT = 1;  // Sample from multiple channels
+    /* Results unsigned right aligned, continuously sampled begining with AN0
+     * NOTE: Writing to ATD0CTL5 has the side effect of toggling conversions,
+     *       so be prepared to make dummy writes to this register to restart
+     *       conversion
+     */
+    ATD0CTL5 = 0b10110000; 
 }
 
-interrupt VectorNumber_Vatd0 void adcint0() {
-    static int i = 0;
-    
-    // for (; i < 8; i++)
-    //     adc_channelReadings[i] = ATD0DR_ARR[i];
-    adc_channelReadings[i] = ATD0DR_ARR[i++];
-    i %= 8;
+#define __ADC_C_INTERRUPT__ \
+interrupt VectorNumber_Vatd0 \
+void adcint0() { \
+    int i = 0; \
+    for (; i < 8; i++) \
+        adc_channelReadings[i] = ATD0DR_ARR[i]; \
 }

@@ -1,5 +1,6 @@
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
+
 #include "segs.h"
 
 #define Segs_WRITE PORTA &= (~0x01); PORTA |= 0x01;

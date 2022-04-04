@@ -2,7 +2,6 @@
 #include "derivative.h"
 
 #include "runtime.h"
-#include "sci.h"
 
 #include <string.h>
 

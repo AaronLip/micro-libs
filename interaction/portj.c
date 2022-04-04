@@ -1,9 +1,9 @@
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
 
-#include "interrupts.h"
+#include "portj.h"
 
-void interrupts_Init() {
+void portj_Init() {
 
     // Configure port J buttons to cause interrupts
     PTJ &= 0b11111100;

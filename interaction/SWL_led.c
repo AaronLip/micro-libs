@@ -11,9 +11,11 @@
  */
 
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
+
+#include <peripheral/timer.h>
+
 #include "SWL_led.h"
-#include "timer.h"
 
 void SWL_Init() {
 
@@ -75,8 +77,7 @@ int SWL_PushedDeb(SWL_SwitchPos pos) {
         byte i = 0;
 
         for (; i < 16; i++) {
-            Timer_Quantity t = { Timer_Period, 1 };
-            (void) Timer_Sleep(t);
+            (void) Timer_Sleep(Time_Period, 1);
             if (SWL_Pushed(pos) != last) {
                 return 0;
             }

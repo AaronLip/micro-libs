@@ -1,8 +1,9 @@
 #include <hidef.h>
-#include "derivative.h"
+#include <derivative.h>
+
+#include <peripheral/timer.h>
 
 #include "lcd.h"
-#include "timer.h"
 
 // Toggle bus direction
 #define lcd_ReadMode DDRH = 0; PORTK |= 2;
@@ -30,21 +31,15 @@ void lcd_Init() {
 
     // Wait for display MPU to boot itself
     Timer_Init(20E6, Timer_Prescale1);
-    {
-        Timer_Quantity t = { Timer_Interval, 15 };
-        Timer_Channel_Init(Timer_Channel7, t, Timer_Pin_Disco, 0);
-        (void) Timer_Sleep(t);
-    }
+    Timer_Channel_Init(Timer_Channel7, Time_Interval, 15, Timer_Pin_Disco, 0);
+    (void) Timer_Sleep(Time_Interval, 15);
 
     // Begin 8-bit init handshake; show the 8-bit for 4.1ms, then 100us, then a final time
     PTH = 0x30;  // Function set 8-bit (bits 0:3 don't matter)
 
     // Long knock
     lcd_StartTransfer;
-    {
-        Timer_Quantity t = { Timer_Interval, 4.1 };
-        (void) Timer_Sleep(t);
-    }
+    (void) Timer_Sleep(Time_Interval, 4.1);
     lcd_StopTransfer;
 
     // Short knock
