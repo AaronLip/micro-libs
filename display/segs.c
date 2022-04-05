@@ -91,14 +91,15 @@ void Segs_CodeB(byte Addr, byte Value) {
 // show a 16-bit value on the upper or lower display
 void Segs_16H(word Value, Segs_LineOption Line) {
     byte addr = 0;
+    word magnitude = 0x1;
 
-    for (;addr < 4;addr++) {
+    for (; addr < 4; addr++, magnitude *= 0x10) {
 
         Segs_Normal(
             // Trim and adjust the address for the current line
             (3 - addr + 4 * Line) & 0x07 | 0b01011000,
             // Trim the desired nibble
-            Value / (byte) (0x1 << (int) addr * 4) % 0x10,
+            Value / magnitude % 0x10,
             // output without a decimal point
             Segs_DP_OFF);
     }
@@ -107,14 +108,15 @@ void Segs_16H(word Value, Segs_LineOption Line) {
 // show a 16-bit value on the upper or lower display with specified decimal points
 void Segs_16HP(word Value, Segs_LineOption Line, Segs_DPOption Decimals[4]) {
     byte addr = 0;
+    word magnitude = 0x1;
 
-    for (;addr < 4;addr++) {
+    for (; addr < 4; addr++, magnitude *= 0x10) {
 
         Segs_Normal(
             // Trim and adjust the address for the current line
             (3 - addr + 4 * Line) & 0x07 | 0b01011000,
             // Trim the desired nibble
-            Value / (byte) (0x1 << (int) addr * 4) % 0x10,
+            Value / magnitude % 0x10,
             // output decimal setting
             Decimals[3-addr]);
     }
