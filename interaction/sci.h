@@ -9,4 +9,4 @@ int SCI0_Write(char data);
 void SCI0_BlockWrite(char data);
 void SCI0_WriteString(char const *stringAddr);
 
-int SCI0_ReadString(char *buffer, int bufferLength);I-
+int SCI0_ReadString(char *buffer, int bufferLength);
