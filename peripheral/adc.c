@@ -38,11 +38,3 @@ void adc_Init(int enableInterrupts) {
      */
     ATD0CTL5 = 0b10110000; 
 }
-
-#define __ADC_C_INTERRUPT__ \
-interrupt VectorNumber_Vatd0 \
-void adcint0() { \
-    int i = 0; \
-    for (; i < 8; i++) \
-        adc_channelReadings[i] = ATD0DR_ARR[i]; \
-}
