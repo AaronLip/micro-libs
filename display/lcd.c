@@ -223,7 +223,7 @@ void lcd_String(char const *straddr) {
 
 void lcd_StringXY(byte ix, byte iy, char const *const straddr) {
     lcd_AddrXY(ix, iy);
-    lcd_String(straddr);
+    lcd_StringRaw(straddr);
 }
 
 void lcd_DisplayControl(byte displayOn, byte cursorOn, byte blinkOn) {
