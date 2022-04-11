@@ -14,12 +14,6 @@ typedef enum SwitchPos {
     SWL_UP    = 0b00010000 
 } SWL_SwitchPos;
 
-typedef enum DebounceOption
-{
-  SWL_DebOff,
-  SWL_DebOn
-} DebounceOption;
-
 // Call this function to prepare the adc for this library's use
 void SWL_Init(void);
 
@@ -39,13 +33,14 @@ void SWL_IF(int condition, SWL_LEDColour led);
 int SWL_Pushed(SWL_SwitchPos button);
 
 // Return a truthy int (the mask for all buttons) if any buttons are pressed, 0 otherwise
-int SWL_Any(void);
+byte SWL_Any(void);
 
 // Checks a button is pushed using a debouncing algorithm
-int SWL_PushedDeb(SWL_SwitchPos pos);
+byte SWL_Debounced(void);
+byte SWL_PushedDeb(SWL_SwitchPos button);
 
 // look for transitions (compares against previous call)
-int SWL_Transitions(DebounceOption deb);
+byte SWL_Transitions(void);
 
 // look for transition by switch name (compares against previous call)
-int SWL_Transition(SWL_SwitchPos pos, DebounceOption deb);
+byte SWL_Transition(SWL_SwitchPos button);

@@ -26,7 +26,6 @@ void SWL_Init() {
     return;
 };
 
-// Turns on an LED
 void SWL_ON(SWL_LEDColour led) {
 
     PT1AD1 |= led;
@@ -34,7 +33,6 @@ void SWL_ON(SWL_LEDColour led) {
     return;
 }
 
-// Turns off an LED
 void SWL_OFF(SWL_LEDColour led) {
 
     PT1AD1 &= (~led);
@@ -42,7 +40,6 @@ void SWL_OFF(SWL_LEDColour led) {
     return;
 }
 
-// Toggles an LED
 void SWL_TOG(SWL_LEDColour led) {
 
     PT1AD1 ^= led;
@@ -50,73 +47,61 @@ void SWL_TOG(SWL_LEDColour led) {
     return;
 }
 
-// Turn on LED if condition is true
 void SWL_IF(int condition, SWL_LEDColour led) {
     if (condition) SWL_ON(led);
     else SWL_OFF(led);
 }
 
-// Checks if a button is being pressed
 int SWL_Pushed(SWL_SwitchPos button) {
 
     return PT1AD1 & button;
 }
 
-// Checks if any button is being pressed
-// returns a truthy integer that can be used to determine which buttons are on
-int SWL_Any() {
+byte SWL_Any() {
 
     return PT1AD1 & 0b00011111;
 }
 
-// Checks a button is pushed using a debouncing algorithm
-int SWL_PushedDeb(SWL_SwitchPos pos) {
-    int last = SWL_Pushed(pos);
+byte SWL_Debounced() {
+    static byte samples[16];
+    static int index = 0;
 
+    // get a new sample and update index
+    samples[index++] = SWL_Any();
+    index %= 16;
+
+    // Sum the samples, assuming that OPEN readings are bouncy
     {
-        byte i = 0;
-
+        byte i = 0, accumulator = 0xff;
         for (; i < 16; i++) {
-            (void) Timer_Sleep(Time_Period, 1);
-            if (SWL_Pushed(pos) != last) {
-                return 0;
-            }
+            accumulator &= samples[i];
         }
 
-        return last;
+        return accumulator;
     }
 }
 
-int abs(int x) {
-    if (x < 0) return -x;
-    return x;
+byte SWL_PushedDeb(SWL_SwitchPos button) {
+    return SWL_Debounced() & button;
 }
 
-// // look for transitions (compares against previous call)
-// int SWL_Transitions(DebounceOption deb) {
-//     static int last[16] = {0};
-//     static int cursor = 0;
-//     int current = SWL_Any();
+byte SWL_Transitions() {
+    static byte last = 0;
+    byte temp = last, current = SWL_Debounced();
 
-//     // Allow some time for bouncing to settle the current sample
-//     if (deb == SWL_DebOn) {
-//         int old = last[cursor] & last[abs((cursor - 1) % 16)] & last[abs((cursor - 2) % 16)];
-//         int new = last[16 - cursor] & last[16 - abs((cursor - 1) % 16)] & last[16 - abs((cursor - 2) % 16)];
+    last = current;
 
-//         cursor++;
-//         cursor %= 16;
-//         last[cursor] = current;
+    return temp ^ current;
+}
 
-//         return old ^ new;
-//     }
+byte SWL_Transition(SWL_SwitchPos button) {
+    return SWL_Transitions() & button;
+}
 
-//     // Return any transitions between the current and last sample
-//     int tmp = last;
-//     last = current;
-//     return current ^ tmp;
-// }
+byte SWL_Click(SWL_SwitchPos button) {
+    return button & SWL_Transition(button) & SWL_Any();
+}
 
-// look for transition by switch name (compares against previous call)
-int SWL_Transition(SWL_SwitchPos pos, DebounceOption deb) {
-    return SWL_Transitions(deb) & pos;
+byte SWL_Release(SWL_SwitchPos button) {
+    return button & SWL_Transition(button) & !(SWL_Any() & button);
 }
